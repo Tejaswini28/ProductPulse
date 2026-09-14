@@ -1,0 +1,14 @@
+export type Page='health'|'investigations'|'knowledge'|'opportunities';
+export type Evidence={evidence_id?:string;timestamp?:string;product_name?:string;signal_type?:string;component?:string;metric_name?:string;value?:number;baseline?:number;severity?:string;customer_id?:string;complaint_text?:string;incident_id?:string;details?:string;session_id?:string;action?:string;result?:string;error_code?:string;service_called?:string;dependent_api?:string;text?:string;source?:string;line_start?:number;line_end?:number;metadata?:Evidence;_evidence?:{evidence_id:string;source:string}};
+export type Finding={statement:string;kind:string;evidence_refs:string[]};
+export type Issue={finding:string;date:string;severity:string;affected_components:string[];evidence_refs:string[];recommendation:string;investigate:boolean};
+export type Health={status:string;error?:string;run_id:string;scope:{products:string[];start:string;end:string};report:{summary:string;products:{product_name:string;status:string;summary:string;evidence_refs:string[];issues:Issue[];limitations:string[]}[]};evidence:Record<string,Evidence>};
+export type Run={id:string;product:string;complaint:string;customer:string;day:string;status:string;classification:string;summary:string;recommendation:string;review:string;notes:string;findings:Finding[];missing_evidence:string[];evidence_conflicts:Finding[];refs:string[];evidence:Record<string,Evidence>;events:Evidence[];metrics:Evidence[];incidents:Evidence[];docs:Evidence[];related:Evidence[];error?:string};
+export type Gap={id:string;product:string;title:string;kind:string;file:string;why:string;truth_ref:string;truth_evidence:Evidence;current_evidence:Evidence};
+export type Knowledge={status:string;error?:string;scope:{products:string[]};report:{summary:string;coverage_notes:string[]};gaps:Gap[];evidence:Record<string,Evidence>};
+export type Draft={proposed_wording:string;reason:string;truth_ref:string};
+export type Pattern={product:string;pattern:string;sessions:string[];complaints:string[];runs:string[];evidence:Record<string,Evidence>};
+export type Signal={id:string;product:string;title:string;day:string;detail:string;recommendation:string;evidence:Evidence[]};
+export type Bootstrap={products:string[];start:string;end:string;signals:Signal[];runs:Run[];knowledge:Knowledge|null;reviews:Record<string,string>;drafts:Record<string,Draft>;opportunities:Pattern[];explored:Record<string,string>};
+export type JobPayload={kind:'health'|'knowledge'|'investigation'|'draft';products?:string[];start?:string;end?:string;product?:string;complaint?:string;customer?:string;day?:string|null;approximate_time?:string|null;context?:unknown;prior_run_id?:string;question?:string;gap_id?:string};
+export type Job={id:string;status:'running'|'completed'|'failed';result?:unknown;error?:string;step?:string|null};

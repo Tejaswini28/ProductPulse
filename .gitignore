@@ -1,0 +1,12 @@
+.venv/
+.env
+.env.*
+!.env.example
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store
+
+frontend/node_modules/
+frontend/test-results/
+frontend/playwright-report/
+*.tsbuildinfo

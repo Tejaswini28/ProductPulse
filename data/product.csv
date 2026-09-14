@@ -1,0 +1,13 @@
+product_id,product_name,product_description,feature,dependent_api,key_metric,expected_baseline_pct
+P001,Bank Account Management,"Manage, verify, select, update, and remove bank accounts used for payments",Add Bank Account,Bank Account API,Add Account Success Rate,97.0
+P001,Bank Account Management,"Manage, verify, select, update, and remove bank accounts used for payments",Verify Bank Account,Bank Verification API,Verification Success Rate,95.0
+P001,Bank Account Management,"Manage, verify, select, update, and remove bank accounts used for payments",Manage Saved Accounts,Bank Account API,Account Management Success Rate,98.0
+P001,Bank Account Management,"Manage, verify, select, update, and remove bank accounts used for payments",Customer Context,Customer Profile API,Profile Lookup Success Rate,99.0
+P002,Payment Flex,Short-term payment assistance with flexible eligible payment options,Check Eligibility,Offer Eligibility API,Eligibility Success Rate,97.0
+P002,Payment Flex,Short-term payment assistance with flexible eligible payment options,View Offer,Offer Eligibility API,Offer Display Success Rate,96.0
+P002,Payment Flex,Short-term payment assistance with flexible eligible payment options,Schedule Payment,Payment Scheduling API,Scheduling Success Rate,95.0
+P002,Payment Flex,Short-term payment assistance with flexible eligible payment options,Customer Context,Customer Profile API,Profile Lookup Success Rate,99.0
+P003,Balance Assist Plan,Structured payment assistance with scheduled payments over time,Check Eligibility,Offer Eligibility API,Eligibility Success Rate,97.0
+P003,Balance Assist Plan,Structured payment assistance with scheduled payments over time,Create Payment Schedule,Payment Scheduling API,Scheduling Success Rate,95.0
+P003,Balance Assist Plan,Structured payment assistance with scheduled payments over time,Check Account Status,Account Status API,Account Status Success Rate,98.0
+P003,Balance Assist Plan,Structured payment assistance with scheduled payments over time,Manage Existing Plan,Payment Scheduling API,Plan Management Success Rate,96.0

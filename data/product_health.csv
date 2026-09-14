@@ -1,0 +1,91 @@
+record_id,timestamp,product_name,signal_type,component,metric_name,value,baseline,severity,customer_id,complaint_text,incident_id,details
+PH001,2026-09-03 09:10:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1001,I tried adding my bank account twice and it keeps failing verification.,,Synthetic customer complaint
+PH002,2026-09-03 10:13:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1002,My routing and account numbers are correct but the bank account will not verify.,,Synthetic customer complaint
+PH003,2026-09-03 11:16:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1003,The app keeps showing an error when I try to save my bank account.,,Synthetic customer complaint
+PH004,2026-09-03 12:19:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1004,I cannot complete bank verification even after retrying.,,Synthetic customer complaint
+PH005,2026-09-03 13:22:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1005,My bank account was added but never became available for payment.,,Synthetic customer complaint
+PH006,2026-09-03 14:25:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1006,Verification failed three times and I had to give up.,,Synthetic customer complaint
+PH007,2026-09-03 15:28:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1007,I keep getting a verification unavailable message.,,Synthetic customer complaint
+PH008,2026-09-03 09:31:00,Bank Account Management,complaint,Bank Verification,Complaint Count,1,,High,C1008,The bank account setup stops at the verification step.,,Synthetic customer complaint
+PH009,2026-09-07 10:34:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1009,I removed a bank account but still see it in a previous payment confirmation.,,Synthetic customer complaint
+PH010,2026-09-08 11:37:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1010,I want to know why my newly added account is pending verification.,,Synthetic customer complaint
+PH011,2026-09-07 12:40:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1011,I cannot find where to change my default bank account.,,Synthetic customer complaint
+PH012,2026-09-08 13:43:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1012,Why do I need to verify a bank account before using it?,,Synthetic customer complaint
+PH013,2026-09-07 14:46:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1013,I tried to remove the only bank account on file and could not.,,Synthetic customer complaint
+PH014,2026-09-08 15:49:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1014,My bank account nickname did not update right away.,,Synthetic customer complaint
+PH015,2026-09-07 09:52:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1015,I added a new account and want to know when I can use it.,,Synthetic customer complaint
+PH016,2026-09-08 10:55:00,Bank Account Management,complaint,Bank Account Management,Complaint Count,1,,Low,C1016,I do not understand which saved account will be used for my payment.,,Synthetic customer complaint
+PH017,2026-09-04 10:05:00,Payment Flex,complaint,Offer Eligibility,Complaint Count,1,,Low,C1101,I do not see Payment Flex even though I wanted to use it.,,Synthetic customer complaint
+PH018,2026-09-04 11:09:00,Payment Flex,complaint,Offer Eligibility,Complaint Count,1,,Low,C1102,Why was I not offered Payment Flex on my account?,,Synthetic customer complaint
+PH019,2026-09-04 12:13:00,Payment Flex,complaint,Offer Eligibility,Complaint Count,1,,Low,C1103,The Payment Flex option is missing for me.,,Synthetic customer complaint
+PH020,2026-09-04 13:17:00,Payment Flex,complaint,Offer Eligibility,Complaint Count,1,,Low,C1104,I expected to see an assistance offer but nothing appeared.,,Synthetic customer complaint
+PH021,2026-09-04 14:21:00,Payment Flex,complaint,Offer Eligibility,Complaint Count,1,,Low,C1105,Why am I not eligible for Payment Flex?,,Synthetic customer complaint
+PH022,2026-09-04 15:25:00,Payment Flex,complaint,Offer Eligibility,Complaint Count,1,,Low,C1106,My friend saw an offer but I do not see one on my account.,,Synthetic customer complaint
+PH023,2026-09-05 16:29:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1107,I do not understand why some payment dates are unavailable.,,Synthetic customer complaint
+PH024,2026-09-05 17:33:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1108,The calendar has dates disabled but does not explain why.,,Synthetic customer complaint
+PH025,2026-09-05 10:37:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1109,I kept trying different dates because the app would not tell me what was allowed.,,Synthetic customer complaint
+PH026,2026-09-05 11:41:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1110,Why can I only pick certain payment dates?,,Synthetic customer complaint
+PH027,2026-09-05 12:45:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1111,The payment date I wanted was greyed out and there was no explanation.,,Synthetic customer complaint
+PH028,2026-09-05 13:49:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1112,I tried three dates before finding one that worked.,,Synthetic customer complaint
+PH029,2026-09-05 14:53:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1113,The date selector is confusing because it does not tell me why a date cannot be selected.,,Synthetic customer complaint
+PH030,2026-09-05 15:07:00,Payment Flex,complaint,Payment Date Selection,Complaint Count,1,,Medium,C1114,I thought the app was broken because several dates were disabled.,,Synthetic customer complaint
+PH031,2026-09-08 16:11:00,Payment Flex,complaint,Payment Flex,Complaint Count,1,,Low,C1115,I accepted Payment Flex but want to review the details again.,,Synthetic customer complaint
+PH032,2026-09-08 17:15:00,Payment Flex,complaint,Payment Flex,Complaint Count,1,,Low,C1116,I want to know whether I can change the payment amount after accepting.,,Synthetic customer complaint
+PH033,2026-09-08 10:19:00,Payment Flex,complaint,Payment Flex,Complaint Count,1,,Low,C1117,I need help understanding the confirmation screen.,,Synthetic customer complaint
+PH034,2026-09-08 11:23:00,Payment Flex,complaint,Payment Flex,Complaint Count,1,,Low,C1118,I want to know when my Payment Flex payment will process.,,Synthetic customer complaint
+PH035,2026-09-06 12:07:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1201,I accepted the plan but the scheduled payment would not save.,,Synthetic customer complaint
+PH036,2026-09-06 13:12:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1202,The app failed when I tried to create my payment schedule.,,Synthetic customer complaint
+PH037,2026-09-06 14:17:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1203,I received an error after confirming my Balance Assist payment dates.,,Synthetic customer complaint
+PH038,2026-09-06 15:22:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1204,My plan setup failed at the final scheduling step.,,Synthetic customer complaint
+PH039,2026-09-06 16:27:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1205,I tried to confirm my payment schedule and received a service error.,,Synthetic customer complaint
+PH040,2026-09-06 17:32:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1206,The payment schedule failed twice before it finally worked.,,Synthetic customer complaint
+PH041,2026-09-06 12:37:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1207,I could see the plan but could not finish setting up the payments.,,Synthetic customer complaint
+PH042,2026-09-06 13:42:00,Balance Assist Plan,complaint,Payment Scheduling,Complaint Count,1,,High,C1208,I had to retry several times before my schedule was created.,,Synthetic customer complaint
+PH043,2026-09-08 14:47:00,Balance Assist Plan,complaint,Balance Assist Plan,Complaint Count,1,,Low,C1209,I want to understand how many scheduled payments are in my plan.,,Synthetic customer complaint
+PH044,2026-09-08 15:52:00,Balance Assist Plan,complaint,Balance Assist Plan,Complaint Count,1,,Low,C1210,Can I change a scheduled payment after accepting the plan?,,Synthetic customer complaint
+PH045,2026-09-08 16:07:00,Balance Assist Plan,complaint,Balance Assist Plan,Complaint Count,1,,Low,C1211,Why is my current balance different from the plan balance?,,Synthetic customer complaint
+PH046,2026-09-08 17:12:00,Balance Assist Plan,complaint,Balance Assist Plan,Complaint Count,1,,Low,C1212,I want to review the dates in my existing Balance Assist Plan.,,Synthetic customer complaint
+PH047,2026-09-08 12:17:00,Balance Assist Plan,complaint,Balance Assist Plan,Complaint Count,1,,Low,C1213,I do not understand when the next payment is due.,,Synthetic customer complaint
+PH048,2026-09-08 13:22:00,Balance Assist Plan,complaint,Balance Assist Plan,Complaint Count,1,,Low,C1214,I need help understanding the plan confirmation.,,Synthetic customer complaint
+PH049,2026-09-02 12:00:00,Bank Account Management,product_metric,Bank Verification,Verification Success Rate,95.4,95.0,Normal,,,,Daily product metric
+PH050,2026-09-03 12:00:00,Bank Account Management,product_metric,Bank Verification,Verification Success Rate,78.2,95.0,High,,,,Daily product metric
+PH051,2026-09-04 12:00:00,Bank Account Management,product_metric,Bank Verification,Verification Success Rate,94.8,95.0,Normal,,,,Daily product metric
+PH052,2026-09-05 12:00:00,Bank Account Management,product_metric,Bank Verification,Verification Success Rate,95.1,95.0,Normal,,,,Daily product metric
+PH053,2026-09-06 12:00:00,Bank Account Management,product_metric,Bank Verification,Verification Success Rate,95.6,95.0,Normal,,,,Daily product metric
+PH054,2026-09-07 12:00:00,Bank Account Management,product_metric,Bank Verification,Verification Success Rate,95.0,95.0,Normal,,,,Daily product metric
+PH055,2026-09-02 12:00:00,Bank Account Management,api_metric,Bank Verification API,API Error Rate,1.1,1.0,Normal,,,,Daily API health metric
+PH056,2026-09-03 12:00:00,Bank Account Management,api_metric,Bank Verification API,API Error Rate,12.8,1.0,High,,,,Daily API health metric
+PH057,2026-09-04 12:00:00,Bank Account Management,api_metric,Bank Verification API,API Error Rate,1.4,1.0,Normal,,,,Daily API health metric
+PH058,2026-09-05 12:00:00,Bank Account Management,api_metric,Bank Verification API,API Error Rate,1.2,1.0,Normal,,,,Daily API health metric
+PH059,2026-09-06 12:00:00,Bank Account Management,api_metric,Bank Verification API,API Error Rate,0.9,1.0,Normal,,,,Daily API health metric
+PH060,2026-09-07 12:00:00,Bank Account Management,api_metric,Bank Verification API,API Error Rate,1.0,1.0,Normal,,,,Daily API health metric
+PH061,2026-09-02 12:00:00,Payment Flex,product_metric,Payment Flex Flow,Completion Rate,91.8,92.0,Normal,,,,Daily product metric
+PH062,2026-09-03 12:00:00,Payment Flex,product_metric,Payment Flex Flow,Completion Rate,92.1,92.0,Normal,,,,Daily product metric
+PH063,2026-09-04 12:00:00,Payment Flex,product_metric,Payment Flex Flow,Completion Rate,91.9,92.0,Normal,,,,Daily product metric
+PH064,2026-09-05 12:00:00,Payment Flex,product_metric,Payment Flex Flow,Completion Rate,90.8,92.0,Normal,,,,Daily product metric
+PH065,2026-09-06 12:00:00,Payment Flex,product_metric,Payment Flex Flow,Completion Rate,91.6,92.0,Normal,,,,Daily product metric
+PH066,2026-09-07 12:00:00,Payment Flex,product_metric,Payment Flex Flow,Completion Rate,92.0,92.0,Normal,,,,Daily product metric
+PH067,2026-09-02 12:00:00,Payment Flex,api_metric,Offer Eligibility API,API Error Rate,1.0,1.0,Normal,,,,Daily API health metric
+PH068,2026-09-03 12:00:00,Payment Flex,api_metric,Offer Eligibility API,API Error Rate,1.2,1.0,Normal,,,,Daily API health metric
+PH069,2026-09-04 12:00:00,Payment Flex,api_metric,Offer Eligibility API,API Error Rate,1.1,1.0,Normal,,,,Daily API health metric
+PH070,2026-09-05 12:00:00,Payment Flex,api_metric,Offer Eligibility API,API Error Rate,1.3,1.0,Normal,,,,Daily API health metric
+PH071,2026-09-06 12:00:00,Payment Flex,api_metric,Offer Eligibility API,API Error Rate,1.0,1.0,Normal,,,,Daily API health metric
+PH072,2026-09-07 12:00:00,Payment Flex,api_metric,Offer Eligibility API,API Error Rate,0.9,1.0,Normal,,,,Daily API health metric
+PH073,2026-09-02 12:00:00,Balance Assist Plan,product_metric,Payment Scheduling,Scheduling Success Rate,94.9,95.0,Normal,,,,Daily product metric
+PH074,2026-09-03 12:00:00,Balance Assist Plan,product_metric,Payment Scheduling,Scheduling Success Rate,95.2,95.0,Normal,,,,Daily product metric
+PH075,2026-09-04 12:00:00,Balance Assist Plan,product_metric,Payment Scheduling,Scheduling Success Rate,95.0,95.0,Normal,,,,Daily product metric
+PH076,2026-09-05 12:00:00,Balance Assist Plan,product_metric,Payment Scheduling,Scheduling Success Rate,94.7,95.0,Normal,,,,Daily product metric
+PH077,2026-09-06 12:00:00,Balance Assist Plan,product_metric,Payment Scheduling,Scheduling Success Rate,80.6,95.0,High,,,,Daily product metric
+PH078,2026-09-07 12:00:00,Balance Assist Plan,product_metric,Payment Scheduling,Scheduling Success Rate,94.8,95.0,Normal,,,,Daily product metric
+PH079,2026-09-02 12:00:00,Balance Assist Plan,api_metric,Payment Scheduling API,API Error Rate,1.0,1.0,Normal,,,,Daily API health metric
+PH080,2026-09-03 12:00:00,Balance Assist Plan,api_metric,Payment Scheduling API,API Error Rate,1.1,1.0,Normal,,,,Daily API health metric
+PH081,2026-09-04 12:00:00,Balance Assist Plan,api_metric,Payment Scheduling API,API Error Rate,1.2,1.0,Normal,,,,Daily API health metric
+PH082,2026-09-05 12:00:00,Balance Assist Plan,api_metric,Payment Scheduling API,API Error Rate,1.0,1.0,Normal,,,,Daily API health metric
+PH083,2026-09-06 12:00:00,Balance Assist Plan,api_metric,Payment Scheduling API,API Error Rate,10.7,1.0,High,,,,Daily API health metric
+PH084,2026-09-07 12:00:00,Balance Assist Plan,api_metric,Payment Scheduling API,API Error Rate,1.3,1.0,Normal,,,,Daily API health metric
+PH085,2026-09-03 09:05:00,Bank Account Management,incident,Bank Verification API,Incident,,,SEV2,,,INC-2001,Elevated bank verification failures between 09:05 and 10:20. Service recovered after dependency reset.
+PH086,2026-09-03 10:25:00,Bank Account Management,incident,Bank Verification API,Incident,,,SEV3,,,INC-2002,Residual verification retries observed after primary recovery; no ongoing outage.
+PH087,2026-09-05 15:00:00,Payment Flex,incident,Payment Flex Flow,Incident,,,INFO,,,INC-2003,Customer-experience review opened for repeated confusion around unavailable payment dates; no technical outage detected.
+PH088,2026-09-06 12:40:00,Balance Assist Plan,incident,Payment Scheduling API,Incident,,,SEV2,,,INC-2004,Elevated scheduling errors from 12:40 to 13:25 impacted plan setup.
+PH089,2026-09-06 13:30:00,Balance Assist Plan,incident,Payment Scheduling API,Incident,,,SEV3,,,INC-2005,Service recovered; retry traffic remained elevated for approximately 20 minutes.
+PH090,2026-09-07 11:00:00,Balance Assist Plan,incident,Account Status API,Incident,,,INFO,,,INC-2006,Monitoring alert reviewed; no customer impact confirmed.
