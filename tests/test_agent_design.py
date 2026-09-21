@@ -24,10 +24,10 @@ def test_inconclusive_reports_abstain(changes):
     assert candidate.classification=='Insufficient Evidence'
     assert 'does not support a conclusive finding' in candidate.summary
 
-def test_supported_finding_keeps_classification():
+def test_old_summary_without_customer_analysis_abstains():
     candidate=report()
     validate_investigation(candidate,{'a':{}})
-    assert candidate.classification=='Technical / Service Issue'
+    assert candidate.classification=='Insufficient Evidence'
 
 def test_conflicting_evidence_must_be_retrieved():
     candidate=report(evidence_conflicts=[dict(statement='Conflict',kind='observation',evidence_refs=['a','invented'])])

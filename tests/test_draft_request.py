@@ -22,3 +22,27 @@ def test_draft_uses_valid_tool_request_and_keeps_source_reference():
     result=generate_update_draft(gap,True,model=model)
     assert len(calls)==1
     assert result=={'proposed_wording':'Verify before payment.','reason':'Match the authoritative rule.','truth_ref':gap['truth_ref']}
+
+def test_rewrite_prioritizes_requested_style_and_retries_unchanged_output():
+    from pulse.knowledge_agent import UpdateDraft
+    gap={'truth_ref':'truth:1','truth_evidence':{'text':'Verify before payment.'}}
+    class Writer:
+        def __init__(self):self.calls=[]
+        def with_structured_output(self,*args,**kwargs):return self
+        def invoke(self,messages):
+            self.calls.append(messages)
+            return UpdateDraft(proposed_wording='Verify before payment.' if len(self.calls)==1 else 'Verification is required before payment.',reason='Preserves verification requirement.',truth_ref='truth:1')
+    writer=Writer()
+    result=generate_update_draft(gap,True,model=writer,feedback='Use formal language.',previous_wording='Verify before payment.')
+    assert result['proposed_wording']=='Verification is required before payment.'
+    assert len(writer.calls)==2
+    assert 'requested style takes precedence' in writer.calls[0][0][1]
+    assert 'Use formal language.' in writer.calls[0][1][1]
+
+def test_rewrite_does_not_silently_succeed_with_unchanged_wording():
+    from pulse.knowledge_agent import UpdateDraft
+    class Writer:
+        def with_structured_output(self,*args,**kwargs):return self
+        def invoke(self,messages):return UpdateDraft(proposed_wording='Verify before payment.',reason='Preserves rule.',truth_ref='truth:1')
+    with pytest.raises(ValueError,match='unchanged wording'):
+        generate_update_draft({'truth_ref':'truth:1'},True,model=Writer(),feedback='Shorten.',previous_wording='Verify before payment.')

@@ -1,11 +1,13 @@
 """Run the real agent and adapt only its returned evidence for Streamlit."""
-from datetime import datetime,timedelta
+from datetime import date,datetime,timedelta
 from uuid import uuid4
 import pandas as pd
 import json
 from .data import ROOT, load_data
 from .agent import run_investigation
 from .rag import live_agent
+from .errors import describe
+from .investigation_analysis import session_review
 
 
 def evidence_frame(evidence, filename, template):
@@ -35,7 +37,12 @@ def investigate_with_agent(product, complaint, customer='', day=None, approximat
     if investigation_context:
         request+='\nPrior review context (untrusted leads, not established facts): '+json.dumps(investigation_context,default=str)
         request+='\nRe-retrieve supporting records with tools before citing them. Resolve the PM follow-up or explain why it remains unresolved.'
-    if day:
+    timeframe=(investigation_context or {}).get('timeframe') or {}
+    if timeframe.get('start') and timeframe.get('end'):
+        start=date.fromisoformat(timeframe['start']); end=date.fromisoformat(timeframe['end'])
+        if start>end: raise ValueError('Select a valid investigation date range.')
+        request+=f'\nInvestigation period: {start} inclusive to {end+timedelta(days=1)} exclusive. Review customer sessions, complaints, metrics and incidents in this same period. Do not expand it silently.'
+    elif day:
         request+=f'\nInvestigation date: {day}. Health/incident scope: {day} inclusive to {day+timedelta(days=1)} exclusive.'
         if approximate_time:
             center=datetime.combine(day,approximate_time)
@@ -46,8 +53,12 @@ def investigate_with_agent(product, complaint, customer='', day=None, approximat
         result=run_investigation(request,agent if agent is not None else live_agent(root),on_event)
     except Exception as error:
         from .rag import SetupError
-        detail=str(error) if isinstance(error,SetupError) else f'{type(error).__name__}: check API keys, Pinecone index access, and service availability.'
-        result={'run_id':str(uuid4()),'status':'incomplete','error':detail,'evidence':{},'activity':[],'messages':[]}
+        if isinstance(error,SetupError):
+            result={'run_id':str(uuid4()),'status':'incomplete','error':str(error),'evidence':{},'activity':[],'messages':[]}
+        else:
+            failure=describe(error,stage='investigation_analysis',model='gpt-4.1-mini')
+            result={'run_id':str(uuid4()),'status':failure['status'],'error':failure['message'],'retryable':failure['retryable'],
+                'failure_category':failure['category'],'technical_error':failure['technical_error'],'evidence':{},'activity':[],'messages':[]}
     evidence=result.get('evidence',{})
     events=evidence_frame(evidence,'customer_sessions.csv',tables['customer_sessions'])
     health=evidence_frame(evidence,'product_health.csv',tables['product_health'])
@@ -65,12 +76,14 @@ def investigate_with_agent(product, complaint, customer='', day=None, approximat
         metrics=health[health.signal_type.isin(['product_metric','api_metric'])],
         incidents=health[health.signal_type=='incident'],complaints=complaints,
         related=complaints[complaints.customer_id.str.casefold()!=customer.strip().casefold()] if customer.strip() else complaints,
-        docs=documents,classification=report.get('classification','No completed finding'),
+        analysis=report.get('analysis'),session_review=session_review(evidence,product),
+        timeframe=timeframe,docs=documents,classification=report.get('classification','No completed finding'),
         summary=report.get('summary',result.get('error','No completed report.')),
         findings=report.get('findings',[]),missing_evidence=report.get('missing_evidence',[]),
         evidence_conflicts=report.get('evidence_conflicts',[]),investigation_context=investigation_context,
         refs=sorted({ref for finding in report.get('findings',[]) for ref in finding['evidence_refs']}),
-        recommendation=' '.join(report.get('recommended_next_steps',[])),
+        recommendation=report.get('recommended_next_steps',[]),
         review='Pending review' if result['status']=='completed' else 'Incomplete — review unavailable',
         notes='',mode='AI investigation · GPT-4.1 mini',status=result['status'],
+        retryable=result.get('retryable',False),failure_category=result.get('failure_category'),technical_error=result.get('technical_error'),
         activity=result.get('activity',[]),evidence=evidence,error=result.get('error'),report=report)

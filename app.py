@@ -62,7 +62,7 @@ def open_investigation(product,day,complaint,context=None):
 with st.sidebar:
     st.markdown('<div class="brand"><span class="brand-mark">↗</span> Product Pulse</div>',unsafe_allow_html=True)
     st.markdown('<div class="eyebrow">Workspace</div>',unsafe_allow_html=True)
-    st.radio('Workspace', ['Overview / Product Health','Investigate','Knowledge Health','Insights'],key='nav',label_visibility='collapsed',format_func=lambda name:'Opportunities' if name=='Insights' else name)
+    st.radio('Workspace', ['Overview / Product Health','Investigate','Knowledge Health','Insights','Evaluation'],key='nav',label_visibility='collapsed',format_func=lambda name:'Opportunities' if name=='Insights' else name)
     st.divider()
     st.markdown('<div class="principle"><strong>AI investigates.<br>PM decides.</strong></div>',unsafe_allow_html=True)
     st.caption('Evidence first. Decisions stay with you.')
@@ -205,7 +205,8 @@ elif st.session_state.nav=='Investigate':
                         evidence_cards(run['evidence'],finding['evidence_refs'],limit=2)
             evidence_cards(run.get('evidence',{}),run.get('refs',[]),limit=3)
             st.markdown('**Recommendation**')
-            concise(run['recommendation'] or 'Resolve the open questions, then investigate again.',label='Read full recommendation',limit=170)
+            recommendation=' '.join(run['recommendation']) if isinstance(run['recommendation'],list) else run['recommendation']
+            concise(recommendation or 'Resolve the open questions, then investigate again.',label='Read full recommendation',limit=170)
             notes=st.text_area('Your notes or follow-up question',value=run['notes'],key='review-notes-'+run['id'])
             columns=st.columns(3)
             for col,label,value in zip(columns,['Confirm Finding','Investigate Further','Disagree'],['Confirmed','Further investigation requested','Disagreed']):
@@ -321,7 +322,7 @@ elif st.session_state.nav=='Knowledge Health':
                 if path.exists(): st.markdown(path.read_text())
                 else: st.warning('Document unavailable.')
 
-else:
+elif st.session_state.nav=='Insights':
     heading('Opportunities worth exploring','Emerging patterns from investigations, ready for your judgment.')
     patterns=opportunities(st.session_state.runs)
     st.caption('Patterns remain provisional until reviewed. Disagreed findings are excluded.')
@@ -347,3 +348,52 @@ else:
             if pid in st.session_state.explored:
                 st.text_area('Exploration notes',key='explore-'+pid,placeholder='What would you like to learn? What evidence would validate this opportunity?')
                 st.caption('Exploration only. Requirements drafting can be added later; no roadmap commitment has been created.')
+
+else:
+    heading('Evaluation results','Scored against data/product_pulse_golden_eval_dataset.csv, the independent answer key.')
+    results_path=ROOT/'eval_results'/'latest.csv'
+    if not results_path.exists():
+        with st.container(border=True):
+            st.subheader('No evaluation run yet')
+            st.write('Generate results with:')
+            st.code('.venv/bin/python scripts/evaluate.py',language='bash')
+            st.caption('Makes real OpenAI/Pinecone calls for the 15 agentic cases — not free, run deliberately.')
+    else:
+        results=pd.read_csv(results_path)
+        st.caption(f'{len(results)} golden scenarios · file last updated {datetime.fromtimestamp(results_path.stat().st_mtime):%b %d, %Y %H:%M}')
+        agentic=results[results.eval_type.isin(['product_health','investigation','knowledge_consistency'])]
+        fail=results[results.eval_type=='failure_handling']
+        hitl=results[results.eval_type=='human_in_loop']
+        st.markdown('**Core quality**')
+        metrics([
+            ('Classification accuracy',f"{100*agentic.classification_correct.mean():.0f}%" if len(agentic) else 'n/a'),
+            ('Retrieval accuracy',f"{agentic.retrieval_score.dropna().mean():.0f}%" if agentic.retrieval_score.notna().any() else 'n/a'),
+            ('Evidence accuracy',f"{agentic.evidence_accuracy.dropna().mean():.0f}%" if agentic.evidence_accuracy.notna().any() else 'n/a'),
+            ('Groundedness',f"{agentic.groundedness_score.dropna().mean():.1f} / 5" if agentic.groundedness_score.notna().any() else 'n/a'),
+            ('Completeness',f"{agentic.completeness_score.dropna().mean():.1f} / 5" if agentic.completeness_score.notna().any() else 'n/a'),
+            ('Correct abstention',f"{100*agentic.abstention_correct.mean():.0f}%" if len(agentic) else 'n/a'),
+        ])
+        st.markdown('**Reliability**')
+        metrics([
+            ('Tool failure recovery',f"{int(fail.tool_failure_recovered.sum())} / {len(fail)}"),
+            ('Human-in-the-loop compliance',f"{int(hitl.hitl_compliant.sum())} / {len(hitl)}"),
+        ])
+        ph=results[results.eval_type=='product_health'];doc=results[results.eval_type=='knowledge_consistency']
+        ph_pos=ph[ph.expected_classification=='Needs Attention'];ph_neg=ph[ph.expected_classification=='Healthy']
+        doc_pos=doc[doc.expected_classification=='Potential Knowledge Gap'];doc_neg=doc[doc.expected_classification=='No Gap']
+        st.markdown('**Product Health**')
+        metrics([
+            ('Issue detection recall',f"{100*ph_pos.classification_correct.mean():.0f}%" if len(ph_pos) else 'n/a'),
+            ('False positive rate',f"{100*(1-ph_neg.classification_correct.mean()):.0f}%" if len(ph_neg) else 'n/a'),
+        ])
+        st.markdown('**Knowledge Consistency**')
+        metrics([
+            ('Gap detection recall',f"{100*doc_pos.classification_correct.mean():.0f}%" if len(doc_pos) else 'n/a'),
+            ('False positive rate',f"{100*(1-doc_neg.classification_correct.mean()):.0f}%" if len(doc_neg) else 'n/a'),
+        ])
+        st.divider()
+        st.markdown('**Per-case results**')
+        show_failures_only=st.checkbox('Show only failed cases')
+        table=results[results.passed==False] if show_failures_only else results
+        st.dataframe(table,use_container_width=True,hide_index=True)
+        st.caption('classification_correct / retrieval_score / abstention_correct / tool_failure_recovered / hitl_compliant are deterministic checks. evidence_accuracy / groundedness_score / completeness_score are LLM-as-judge scores.')

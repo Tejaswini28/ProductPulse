@@ -58,3 +58,15 @@ Browser tests require the API running on port 8000 and local Google Chrome at th
 - `pulse/knowledge_agent.py`: the targeted quotation-validation fix.
 - `app.py`: the earlier Streamlit interface retained for comparison.
 - `product_pulse_rag.ipynb`: the same Python tools and agents, independently runnable.
+
+## UI theme
+
+The frontend uses the Clean Light palette: background `#F8FAFC`, sidebar `#EEF3F8`, navy headings `#17233C`, slate body text `#334155`, secondary text `#64748B`, and teal primary buttons `#0F766E`. White cards, DM Sans body text, and Outfit headings complete the theme. Health statuses retain distinct amber, rose, and green accents. Shared color tokens and controls live in `frontend/src/index.css`; reusable badges, empty states, and detail drawers live in `frontend/src/components.tsx`. Google Fonts supplies the typefaces, with system-font fallbacks when offline.
+
+Run the responsive UI checks against a running frontend with `cd frontend && npx playwright test theme.spec.ts`. Set `PULSE_UI_URL` to override the default `http://127.0.0.1:8000`. These checks mock the bootstrap response and do not call the agents or require local demo data.
+
+The Product Health overview renders compact product rows in `frontend/src/HealthDashboard.tsx`, with four status filters and a scan-insights column. Each row shows the latest available product/API reading in the scan window and counts of returned complaint/incident records. Charts use dated evidence only; missing readings and trends are labeled explicitly. Search filters product names and findings; sorting supports attention level and product name. Product names and row arrows open the existing finding review.
+
+Knowledge Health uses `frontend/src/KnowledgeDashboard.tsx` for compact, document-focused gap reviews. The summary counts pending, confirmed, and rejected gaps in the selected product scope; successful comparisons validate all four documents. All-products results group gaps by product. Source links remain compact, and each gap opens the existing confirm/reject → draft → approve flow. Successful checks save a timezone-aware `checked_at` timestamp; failed retries retain the previous check. Run `npx playwright test knowledge-layout.spec.ts theme.spec.ts` from `frontend` to verify the layout and review entry points.
+
+Product Health now uses `frontend/src/healthView.ts` to derive display-only summaries from the scan’s dated evidence and existing dependency catalog. Cards show a primary product metric, API coverage/status, complaint comparison, and incidents. Unknown dependencies remain explicit. Recovery requires a linked scan finding and subsequent near-baseline evidence; current degradation takes priority. Near-baseline tolerance and observation-time limitations are disclosed in the API detail view. The backend only exposes existing catalog rows in bootstrap; agent prompts, tools, source data, and findings are unchanged. Ask Product Pulse and Investigate send timeframe, affected API names, findings, metrics, complaints, and incidents as context to the existing Investigation Agent.

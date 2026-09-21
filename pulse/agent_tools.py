@@ -1,10 +1,32 @@
 """Seven evidence tools shared by Streamlit and the notebook."""
-import csv, json, math
+import csv, json, math, time
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from langchain.tools import tool
 from .data import ROOT
+from .investigation_analysis import session_review
+
+def tool_error(error: Exception) -> dict:
+    # Recoverable failures become a normal tool result the model can react to
+    # (try a different tool, note the gap) instead of a crash that aborts
+    # the whole run and discards evidence already gathered.
+    return {"status": "error", "error": f"{type(error).__name__}: {error}", "records": []}
+
+def with_retries(fn, attempts=2, delay=0.3):
+    # Retries happen inside one tool call, invisible to the agent's own
+    # tool-call budget. A deterministic input error fails identically each
+    # time, but this protects against a transient hiccup (file/network)
+    # without spending the model's limited tool calls retrying itself.
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            return fn()
+        except Exception as error:
+            last_error = error
+            if attempt < attempts - 1:
+                time.sleep(delay)
+    return tool_error(last_error)
 
 def build_tools(retriever, root=ROOT):
     """Create isolated tools for one agent; no process-global retriever or key state."""
@@ -107,8 +129,10 @@ def build_tools(retriever, root=ROOT):
         product_name: Exact product name, case-insensitive. Returns source records,
         not an assessment of current health.
         """
-        filters = {"product_name": _required(product_name, "product_name")}
-        return _result("product.csv", _select(_load_rows("product.csv"), filters), filters)
+        def run():
+            filters = {"product_name": _required(product_name, "product_name")}
+            return _result("product.csv", _select(_load_rows("product.csv"), filters), filters)
+        return with_retries(run)
     @tool
     def get_product_health(product_name: str, start_time: str | None = None,
                   end_time: str | None = None) -> dict:
@@ -118,7 +142,7 @@ def build_tools(retriever, root=ROOT):
         Optional ISO timestamps use an inclusive start and exclusive end, without timezone.
         Returns all matching evidence records; no matches does not prove no issue exists.
         """
-        return _health_records(product_name, None, start_time, end_time)
+        return with_retries(lambda: _health_records(product_name, None, start_time, end_time))
     @tool
     def get_complaints(product_name: str, start_time: str | None = None,
                   end_time: str | None = None, customer_id: str | None = None) -> dict:
@@ -128,7 +152,7 @@ def build_tools(retriever, root=ROOT):
         Optional ISO timestamps use an inclusive start and exclusive end, without timezone.
         Returns all matching evidence records; no matches does not prove no issue exists.
         """
-        return _health_records(product_name, 'complaint', start_time, end_time, customer_id=customer_id)
+        return with_retries(lambda: _health_records(product_name, 'complaint', start_time, end_time, customer_id=customer_id))
     @tool
     def get_incidents(product_name: str, start_time: str | None = None,
                   end_time: str | None = None) -> dict:
@@ -138,7 +162,7 @@ def build_tools(retriever, root=ROOT):
         Optional ISO timestamps use an inclusive start and exclusive end, without timezone.
         Returns all matching evidence records; no matches does not prove no issue exists.
         """
-        return _health_records(product_name, 'incident', start_time, end_time)
+        return with_retries(lambda: _health_records(product_name, 'incident', start_time, end_time))
     @tool
     def get_api_metrics(product_name: str, start_time: str | None = None,
                   end_time: str | None = None, component: str | None = None) -> dict:
@@ -148,26 +172,33 @@ def build_tools(retriever, root=ROOT):
         Optional ISO timestamps use an inclusive start and exclusive end, without timezone.
         Returns all matching evidence records; no matches does not prove no issue exists.
         """
-        return _health_records(product_name, 'api_metric', start_time, end_time, component=component)
+        return with_retries(lambda: _health_records(product_name, 'api_metric', start_time, end_time, component=component))
     @tool
-    def find_customer_session(customer_id: str, product_name: str | None = None,
+    def find_customer_session(customer_id: str | None = None, product_name: str | None = None,
                               session_id: str | None = None, start_time: str | None = None,
                               end_time: str | None = None) -> dict:
         """Retrieve a customer's session events chronologically, with source references.
 
-        customer_id is required. Product and session IDs are optional exact,
+        Provide customer_id or product_name. Omit customer_id to review all available
+        sessions for a product, including customers without complaints. Session IDs are exact,
         case-insensitive filters. ISO start_time is inclusive and end_time exclusive;
         use timestamps without timezone, matching the CSV clock.
         """
-        filters = {"customer_id": _required(customer_id, "customer_id"),
-                   "product_name": product_name, "session_id": session_id}
-        rows = _select(_load_rows("customer_sessions.csv"), filters, start_time, end_time)
-        result = _result("customer_sessions.csv", rows, {
-            **filters, "start_time": start_time, "end_time": end_time,
-        })
-        result["session_ids"] = sorted({row["session_id"] for row in rows})
-        result["event_counts_by_result"] = dict(Counter(row["result"] for row in rows))
-        return result
+        def run():
+            if not customer_id and not product_name:
+                raise ValueError("Provide customer_id or product_name to scope the session review.")
+            filters = {"customer_id": customer_id,
+                       "product_name": product_name, "session_id": session_id}
+            rows = _select(_load_rows("customer_sessions.csv"), filters, start_time, end_time)
+            result = _result("customer_sessions.csv", rows, {
+                **filters, "start_time": start_time, "end_time": end_time,
+            })
+            result["session_ids"] = sorted({row["session_id"] for row in rows})
+            result["event_counts_by_result"] = dict(Counter(row["result"] for row in rows))
+            registry = {row['_evidence']['evidence_id']: row for row in rows}
+            result["session_patterns"] = {name: session_review(registry, name) for name in sorted({row['product_name'] for row in rows})}
+            return result
+        return with_retries(run)
     @tool
     def search_product_docs(query: str) -> dict:
         """Search product Markdown for expected behavior, business rules and API guidance.
@@ -176,13 +207,15 @@ def build_tools(retriever, root=ROOT):
         Returns retrieved passages and source metadata in similarity order.
         Retrieval is not exhaustive; no result does not establish absence of a rule.
         """
-        query = _required(query, "query")
-        if retriever is None:
-            raise RuntimeError("Initialize the RAG retriever by running notebook sections 2–7 first.")
-        docs = retriever.invoke(query)
-        records = [{"citation_label": f"[{i}]", "evidence_ref": f"{doc.metadata['source']}:lines-{int(doc.metadata['line_start'])}-{int(doc.metadata['line_end'])}", "text": doc.page_content,
-                    "metadata": dict(doc.metadata)}
-                   for i, doc in enumerate(docs, start=1)]
-        return {"status": "ok" if records else "no_matches", "query": query,
-                "record_count": len(records), "records": records}
+        def run():
+            checked_query = _required(query, "query")
+            if retriever is None:
+                raise RuntimeError("Initialize the RAG retriever by running notebook sections 2–7 first.")
+            docs = retriever.invoke(checked_query)
+            records = [{"citation_label": f"[{i}]", "evidence_ref": f"{doc.metadata['source']}:lines-{int(doc.metadata['line_start'])}-{int(doc.metadata['line_end'])}", "text": doc.page_content,
+                        "metadata": dict(doc.metadata)}
+                       for i, doc in enumerate(docs, start=1)]
+            return {"status": "ok" if records else "no_matches", "query": checked_query,
+                    "record_count": len(records), "records": records}
+        return with_retries(run)
     return [get_product_context, get_product_health, get_complaints, get_incidents, get_api_metrics, find_customer_session, search_product_docs]

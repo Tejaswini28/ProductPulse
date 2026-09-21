@@ -7,7 +7,7 @@ from pathlib import Path
 from threading import RLock
 from typing import Literal
 from uuid import uuid4
-import json,math,secrets
+import hashlib,json,math,secrets
 import pandas as pd
 from fastapi import FastAPI,Request,Response,HTTPException
 from fastapi.responses import FileResponse,PlainTextResponse
@@ -34,7 +34,11 @@ def serial(value):
     if hasattr(value,'item'):return serial(value.item())
     return value
 
-def new_state():return {'version':fingerprint(),'jobs':{},'runs':{},'knowledge':None,'gap_reviews':{},'drafts':{},'approved':{},'explored':{}}
+def new_state():return {'version':fingerprint(),'jobs':{},'runs':{},'knowledge':None,'gap_reviews':{},'drafts':{},'approved':{},'explored':{},'health':None,'health_reviews':{}}
+
+def finding_id(product_name,issue):
+    basis=json.dumps([product_name,issue['finding'],issue['date']],sort_keys=True)
+    return hashlib.sha256(basis.encode()).hexdigest()[:16]
 
 @app.middleware('http')
 async def browser_session(request:Request,call_next):
@@ -60,20 +64,19 @@ def session(request):return request.state.session
 
 def public_run(run):return serial(run)
 
-def safe_failure(error):
+def safe_failure(error,stage='job'):
     from pulse.rag import SetupError
     if isinstance(error,SetupError):return str(error)
-    name=type(error).__name__
-    if name=='AuthenticationError':return 'The AI service rejected the API key. Update OPENAI_API_KEY in Product Pulse/.env and retry.'
-    if name=='RateLimitError':return 'The AI service limit was reached. Check API billing or retry when the limit resets.'
-    return 'The review could not complete. Check service access and retry. No finding has been approved.'
+    from pulse.errors import describe
+    return describe(error,stage=stage,model='gpt-4.1-mini')['message']
 
 @app.get('/api/bootstrap')
 def bootstrap(request:Request):
     data=load_data();health=data['product_health'];state=session(request)
-    return serial({'products':sorted(data['product'].product_name.unique()),'start':health.day.min(),'end':health.day.max(),
+    return serial({'product_catalog':data['product'].to_dict(orient='records'),'products':sorted(data['product'].product_name.unique()),'start':health.day.min(),'end':health.day.max(),
         'signals':health_issues(data),'runs':list(state['runs'].values()),'knowledge':state['knowledge'],
-        'reviews':state['gap_reviews'],'drafts':state['drafts'],'opportunities':opportunities(list(state['runs'].values())),'explored':state['explored']})
+        'reviews':state['gap_reviews'],'drafts':state['drafts'],'approved':state['approved'],'opportunities':opportunities(list(state['runs'].values())),'explored':state['explored'],
+        'health':state['health'],'health_reviews':state['health_reviews']})
 
 class JobRequest(BaseModel):
     kind:Literal['health','investigation','knowledge','draft']
@@ -89,6 +92,8 @@ class JobRequest(BaseModel):
     prior_run_id:str|None=None
     question:str=''
     gap_id:str|None=None
+    wording:str=''
+    feedback:str=''
 
 
 def gap_for(state,gid):
@@ -128,7 +133,9 @@ def start_job(body:JobRequest,request:Request):
             if not prior or prior['status']!='completed':raise HTTPException(409,'Choose a completed finding to investigate further.')
             body.product=prior['product'];body.customer=prior['customer'];body.complaint=prior['complaint']+'\nFollow-up: '+body.question
             body.day=date.fromisoformat(prior['day']) if prior['day']!='All available dates' else None
-            body.context={'origin':'Investigate Further','prior_report':prior['report'],'pm_question':body.question}
+            body.context={**(prior.get('investigation_context') or {}),'origin':'Investigate Further','prior_report':prior['report'],'pm_question':body.question}
+        if body.start and body.end:
+            body.context={**(body.context or {}),'timeframe':{'start':str(body.start),'end':str(body.end)}}
         if body.product not in known or not body.complaint.strip():raise HTTPException(422,'Choose a product and describe the issue.')
     if body.kind=='draft':
         gap=gap_for(state,body.gap_id)
@@ -142,17 +149,23 @@ def start_job(body:JobRequest,request:Request):
             if body.kind=='health':result=run_product_health(body.products,body.start,body.end,on_event=progress)
             elif body.kind=='knowledge':result=run_knowledge_consistency(body.products,on_event=progress)
             elif body.kind=='investigation':result=investigate_with_agent(body.product,body.complaint,body.customer,body.day,body.approximate_time,investigation_context=body.context,on_event=progress)
-            else:result=generate_update_draft(gap,True)
+            else:result=generate_update_draft(gap,True,feedback=body.feedback or None,previous_wording=body.wording or None)
             with LOCK:
                 if state['version']!=fingerprint():raise ValueError('Source data changed during the review.')
                 if body.kind=='investigation':state['runs'][result['id']]=result
+                if body.kind=='health' and result.get('status')=='completed':
+                    for p in result['report']['products']:
+                        for issue in p['issues']:issue['id']=finding_id(p['product_name'],issue)
+                    result['scanned_at']=datetime.now().isoformat()
+                    state['health']=result
                 if body.kind=='knowledge' and result['status']=='completed':
+                    result['checked_at']=datetime.now().astimezone().isoformat()
                     state.update(knowledge=result,gap_reviews={},drafts={},approved={})
                 if body.kind=='draft':
                     if state['gap_reviews'].get(body.gap_id)!='Confirmed':raise ValueError('Gap confirmation was withdrawn.')
                     state['drafts'][body.gap_id]=result;state['approved'].pop(body.gap_id,None)
                 job.update(status='completed',result=serial(result))
-        except Exception as error:job.update(status='failed',error=safe_failure(error))
+        except Exception as error:job.update(status='failed',error=safe_failure(error,stage=body.kind))
     POOL.submit(work)
     return {'id':jid}
 
@@ -182,6 +195,23 @@ def review_gap(gid:str,body:Review,request:Request):
     if body.decision=='Not a gap':state['drafts'].pop(gid,None);state['approved'].pop(gid,None)
     return {'decision':body.decision}
 
+def finding_for(state,fid):
+    scan=state['health']
+    for p in (scan or {}).get('report',{}).get('products',[]):
+        for issue in p['issues']:
+            if issue['id']==fid:return issue
+    raise HTTPException(404,'This finding is no longer available. Run a new health scan.')
+
+class HealthReview(BaseModel):
+    decision:Literal['monitoring','dismissed']
+    reason:str=''
+
+@app.post('/api/health-findings/{fid}/review')
+def review_finding(fid:str,body:HealthReview,request:Request):
+    state=session(request);finding_for(state,fid)
+    state['health_reviews'][fid]={'decision':body.decision,'reason':body.reason}
+    return state['health_reviews'][fid]
+
 class Wording(BaseModel):
     wording:str=Field(min_length=1,max_length=20000)
 
@@ -191,15 +221,15 @@ def approve(gid:str,body:Wording,request:Request):
     if state['gap_reviews'].get(gid)!='Confirmed' or not draft:raise HTTPException(409,'Confirm the gap and draft an update first.')
     if not body.wording.strip():raise HTTPException(422,'Enter proposed wording.')
     preview=update_request(gap,body.wording,draft['reason'],draft['truth_ref'])
-    state['approved'][gid]=preview
+    state['approved'][gid]=body.wording
     return {'preview':preview}
 
 @app.post('/api/gaps/{gid}/export')
 def export(gid:str,body:Wording,request:Request):
     state=session(request);gap=gap_for(state,gid);draft=state['drafts'].get(gid)
     if state['gap_reviews'].get(gid)!='Confirmed' or not draft:raise HTTPException(409,'Confirm and approve this update first.')
+    if state['approved'].get(gid)!=body.wording:raise HTTPException(409,'Approve the current wording before downloading.')
     preview=update_request(gap,body.wording,draft['reason'],draft['truth_ref'])
-    if state['approved'].get(gid)!=preview:raise HTTPException(409,'Approve the current wording before downloading.')
     return {'preview':preview}
 
 class Exploration(BaseModel):

@@ -67,3 +67,26 @@ def test_jobs_are_isolated_and_user_triggered(client,monkeypatch):
 def test_mutations_need_header_and_sources_are_allowlisted(client):
     assert client.post('/api/jobs',json={'kind':'health'},headers={'X-Pulse-Request':''}).status_code==403
     assert client.get('/api/documents/.env').status_code==404
+
+def test_knowledge_completion_timestamp_survives_bootstrap_and_failed_retry(client,monkeypatch):
+    from datetime import datetime
+    monkeypatch.setattr(web,'run_knowledge_consistency',lambda *args,**kwargs:{'status':'completed','scope':{'products':['Bank Account Management']},'gaps':[],'report':{'coverage_notes':['All sources read']}})
+    def run():
+        jid=client.post('/api/jobs',json={'kind':'knowledge','products':['Bank Account Management']}).json()['id']
+        for _ in range(100):
+            job=client.get('/api/jobs/'+jid).json()
+            if job['status']!='running':return job
+            time.sleep(.01)
+        pytest.fail('Knowledge job did not finish')
+    job=run()
+    stamp=job['result']['checked_at']
+    assert datetime.fromisoformat(stamp).tzinfo is not None
+    assert client.get('/api/bootstrap').json()['knowledge']['checked_at']==stamp
+    monkeypatch.setattr(web,'run_knowledge_consistency',lambda *args,**kwargs:{'status':'validation_failed'})
+    run()
+    assert client.get('/api/bootstrap').json()['knowledge']['checked_at']==stamp
+
+def test_bootstrap_exposes_existing_dependency_catalog(client):
+    catalog=client.get('/api/bootstrap').json()['product_catalog']
+    expected=web.load_data()['product'][['product_name','dependent_api']].drop_duplicates()
+    assert {(r['product_name'],r['dependent_api']) for r in catalog}==set(expected.itertuples(index=False,name=None))

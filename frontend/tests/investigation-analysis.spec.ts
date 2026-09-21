@@ -1,0 +1,28 @@
+import {test,expect} from '@playwright/test';
+const e={session_id:'S1',customer_id:'C1',product_name:'Example',action:'Schedule payment',result:'FAILED',timestamp:'2026-09-06 12:00:00',_evidence:{source:'data/customer_sessions.csv',evidence_id:'session'}};
+const finding=(statement:string,evidence_refs=['session'])=>({statement,evidence_refs,kind:'observation'});
+const run={id:'r1',product:'Example',complaint:'Scheduling failed',customer:'',day:'All available dates',timeframe:{start:'2026-09-02',end:'2026-09-08'},status:'completed',classification:'Insufficient Evidence',summary:'Failures were observed; recovery outcomes are unavailable.',recommendation:[],review:'Pending review',notes:'',findings:[finding('A scheduling failure was recorded.')],missing_evidence:['After recovery sessions are missing.'],evidence_conflicts:[],refs:['session'],evidence:{session:e,api:{signal_type:'api_metric',component:'Scheduling API',value:10.7,baseline:1},truth:{text:'Scheduling requires eligibility.',metadata:{source:'data/product_source_of_truth.md',line_start:1,line_end:1}}},events:[e],metrics:[],incidents:[],docs:[],related:[],session_review:{reviewed_sessions:6,reviewed_customers:6,matching_sessions:5,matching_customers:5,failure_step:'Scheduling',affected_api:'Scheduling API',scope_note:'Reviewed sessions only.',sessions:[{session_id:'S1',customer_id:'C1',matches_pattern:true,evidence_refs:['session']}]},analysis:{common_journey:[finding('Customer reaches scheduling → request fails.')],dependency_health:[{...finding('Errors above baseline.',['api']),api:'Scheduling API',status:'Degraded'}],periods:[{...finding('Scheduling failures during API degradation.',['api','session']),phase:'During'}],complaint_themes:[finding('Customers could not complete scheduling.')],related_incidents:[],expected_behavior:[finding('Scheduling requires eligibility.',['truth'])]}};
+for(const width of [1440,390])test(`investigation evidence and checkpoint at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:950});
+ await page.route('**/api/bootstrap',r=>r.fulfill({json:{products:['Example'],start:'2026-09-02',end:'2026-09-08',signals:[],runs:[run],knowledge:null,reviews:{},drafts:{},approved:{},opportunities:[],explored:{},health:null,health_reviews:{}}}));
+ await page.goto('/');
+ await page.getByRole('button',{name:/Investigations/}).click();
+ await page.getByRole('button',{name:/Scheduling failed/}).click();
+ const dialog=page.getByRole('dialog');
+ for(const heading of ['1. Investigation finding','2. Customer impact','3. Common customer journey','4. Dependency health','5. Before / During / After','6. Complaint themes','7. Related incidents','8. Expected behavior','9. Product Pulse assessment'])await expect(dialog.getByRole('heading',{name:heading,exact:true})).toBeAttached();
+ await expect(dialog).toContainText('5 of 6 reviewed sessions');
+ await expect(dialog).toContainText('After recovery sessions are missing.');
+ await dialog.getByRole('button',{name:/Open customer session/}).first().click();
+ await expect(page.getByRole('dialog',{name:'Supporting evidence'})).toContainText('Schedule payment');
+ await page.keyboard.press('Escape');
+ await expect(dialog.getByRole('button',{name:'Confirm Finding',exact:true})).toBeEnabled();
+ await expect(dialog.getByRole('button',{name:'Disagree',exact:true})).toBeEnabled();
+ let payload:any;
+ await page.route('**/api/jobs',r=>{payload=r.request().postDataJSON();return r.fulfill({json:{id:'followup'}})});
+ await page.route('**/api/jobs/followup',r=>r.fulfill({json:{status:'running'}}));
+ await dialog.getByLabel('Add context or ask Product Pulse to investigate something else').fill('Find sessions after recovery');
+ await dialog.getByRole('button',{name:'Investigate Further',exact:true}).click();
+ await expect.poll(()=>payload?.prior_run_id).toBe('r1');
+ expect(payload.question).toBe('Find sessions after recovery');
+ await expect(page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).resolves.toBeTruthy();
+});

@@ -56,9 +56,11 @@ def test_error_no_local_fallback(monkeypatch):
     def fail(root):raise RuntimeError('fake-secret-should-not-appear')
     monkeypatch.setattr('pulse.investigation_service.live_agent',fail)
     run=investigate_with_agent('Bank Account Management','Verification failed')
-    assert run['status']=='incomplete'
+    assert run['status']=='unavailable'  # a classified service/tool failure, distinct from a soft "incomplete" (no report, no crash)
     assert run['events'].empty and not run['report']
     assert 'fake-secret' not in run['summary']
+    assert 'fake-secret' not in run['error']
+    assert 'fake-secret' in run['technical_error']  # the real detail is preserved, just not PM-facing
 
 def test_agent_budget_stops_without_a_report():
     from pulse.agent import run_investigation
